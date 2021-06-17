@@ -1,17 +1,16 @@
 import unittest
 
 from recipe_app import app, db, bcrypt
-from recipe_app.models import (
-    User, Recipe, Ingredient, recipe_ingredient_association)
+from recipe_app.models import (User,
+                               Recipe,
+                               Ingredient,
+                               recipe_ingredient_association)
 
 
 def login(client, username, password):
     """logs in a user for testing"""
-    data = {
-        'username': username,
-        'password': password
-    }
-    return client.post('/login', data=data, follow_redirects=True)
+    data = {"username": username, "password": password}
+    return client.post("/login", data=data, follow_redirects=True)
 
 
 def logout(client):
@@ -22,32 +21,32 @@ def logout(client):
 def create_user():
     """Creates a test user"""
 
-    password = bcrypt.generate_password_hash('password').decode('utf-8')
-    user = User(username='shaun', password=password)
+    password = bcrypt.generate_password_hash("password").decode("utf-8")
+    user = User(username="shaun", password=password)
     db.session.add(user)
     db.session.commit()
 
 
 def create_recipe():
     """Creates two test recipes with ingredients"""
-    h2o = Ingredient(name='water')
-    ingredients = [Ingredient(name='turkey'), Ingredient(
-        name='ham'), Ingredient(name='potatoes'), h2o]
-    r1 = Recipe(
-        title='ThanksGiving'
-    )
+    h2o = Ingredient(name="water")
+    ingredients = [
+        Ingredient(name="turkey"),
+        Ingredient(name="ham"),
+        Ingredient(name="potatoes"),
+        h2o,
+    ]
+    r1 = Recipe(title="ThanksGiving")
     for i in ingredients:
-        new_association = recipe_ingredient_association(
-            amount=10, ingredient=i)
+        new_association = recipe_ingredient_association(amount=10,
+                                                        ingredient=i)
         r1.ingredients.append(new_association)
 
-    ingredients = [Ingredient(name='teabags'), Ingredient(name='honey'), h2o]
-    r2 = Recipe(
-        title='Tea'
-    )
+    ingredients = [Ingredient(name="teabags"), Ingredient(name="honey"), h2o]
+    r2 = Recipe(title="Tea")
     for i in ingredients:
-        new_association = recipe_ingredient_association(
-            amount=10, ingredient=i)
+        new_association = recipe_ingredient_association(amount=10,
+                                                        ingredient=i)
         r2.ingredients.append(new_association)
 
     db.session.add(r1)
@@ -57,56 +56,56 @@ def create_recipe():
 
 class Tests(unittest.TestCase):
     def setUp(self):
-        app.config['TESTING'] = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['DEBUG'] = False
-        app.config['DATABASE_URL'] = 'sqlite:///:memory:'
+        app.config["TESTING"] = True
+        app.config["WTF_CSRF_ENABLED"] = False
+        app.config["DEBUG"] = False
+        app.config["DATABASE_URL"] = "sqlite:///:memory:"
         self.app = app.test_client()
         db.drop_all()
         db.create_all()
 
     def test_homepage_signed_in(self):
-        '''Test that recipes and ingredients are shown on homepage  '''
+        """Test that recipes and ingredients are shown on homepage"""
         create_recipe()
         create_user()
-        login(self.app, 'shaun', 'password')
+        login(self.app, "shaun", "password")
 
-        response = self.app.get('/')
+        response = self.app.get("/")
         self.assertEqual(response.status_code, 200)
 
         response_data = response.get_data(as_text=True)
 
-        self.assertIn('ThanksGiving', response_data)
-        self.assertIn('Tea', response_data)
-        self.assertIn('honey', response_data)
-        self.assertIn('turkey', response_data)
-        self.assertIn('teabags', response_data)
+        self.assertIn("ThanksGiving", response_data)
+        self.assertIn("Tea", response_data)
+        self.assertIn("honey", response_data)
+        self.assertIn("turkey", response_data)
+        self.assertIn("teabags", response_data)
 
-        self.assertIn('Logout', response_data)
-        self.assertIn('Create Recipe', response_data)
+        self.assertIn("Logout", response_data)
+        self.assertIn("Create Recipe", response_data)
 
-        self.assertNotIn('Signup', response_data)
+        self.assertNotIn("Signup", response_data)
 
     def test_homepage_signed_out(self):
         """Test that signout and create recipe are not present and
         sign in is"""
         create_recipe()
-        response = self.app.get('/')
+        response = self.app.get("/")
         self.assertEqual(response.status_code, 200)
 
         response_data = response.get_data(as_text=True)
 
-        self.assertIn('ThanksGiving', response_data)
-        self.assertIn('Tea', response_data)
-        self.assertIn('honey', response_data)
-        self.assertIn('turkey', response_data)
-        self.assertIn('teabags', response_data)
+        self.assertIn("ThanksGiving", response_data)
+        self.assertIn("Tea", response_data)
+        self.assertIn("honey", response_data)
+        self.assertIn("turkey", response_data)
+        self.assertIn("teabags", response_data)
 
-        self.assertIn('Signup', response_data)
+        self.assertIn("Signup", response_data)
         self.assertIn("Login", response_data)
 
-        self.assertNotIn('Logout', response_data)
-        self.assertNotIn('Create Recipe', response_data)
+        self.assertNotIn("Logout", response_data)
+        self.assertNotIn("Create Recipe", response_data)
 
     def test_recipe_route(self):
         """Test Recipe Name and all ingredients appear"""
@@ -117,46 +116,97 @@ class Tests(unittest.TestCase):
 
         response_txt = response.get_data(as_text=True)
 
-        self.assertIn('ThanksGiving', response_txt)
-        self.assertIn('turkey', response_txt)
-        self.assertIn('ham', response_txt)
-        self.assertIn('potatoes', response_txt)
+        self.assertIn("ThanksGiving", response_txt)
+        self.assertIn("turkey", response_txt)
+        self.assertIn("ham", response_txt)
+        self.assertIn("potatoes", response_txt)
 
-        self.assertNotIn('teabags', response_txt)
+        self.assertNotIn("teabags", response_txt)
 
     def test_ingredient_route(self):
         """Test both recipes appear when viewing water"""
         create_recipe()
-        i = Ingredient.query.filter_by(name='water').first()
+        i = Ingredient.query.filter_by(name="water").first()
         id = i.id
 
-        response = self.app.get(f'/ingredient/{id}')
+        response = self.app.get(f"/ingredient/{id}")
         self.assertEqual(response.status_code, 200)
 
         response_txt = response.get_data(as_text=True)
 
-        self.assertIn('water', response_txt)
-        self.assertIn('Tea', response_txt)
-        self.assertIn('ThanksGiving', response_txt)
+        self.assertIn("water", response_txt)
+        self.assertIn("Tea", response_txt)
+        self.assertIn("ThanksGiving", response_txt)
 
         self.assertNotIn("turkey", response_txt)
 
-    def test_userprofile(self):
+    def test_userprofile_route(self):
         """Test Profile Route Shows recipes that have been favorited"""
         create_recipe()
         create_user()
-        login(self.app, 'shaun', 'password')
+        login(self.app, "shaun", "password")
         new_fav = Recipe.query.get(1)
         user = User.query.get(1)
         user.favorite_recipes.append(new_fav)
         db.session.commit()
 
-        response = self.app.get('/profile')
+        response = self.app.get("/profile")
         self.assertEqual(response.status_code, 200)
 
         response_txt = response.get_data(as_text=True)
 
-        self.assertIn('shaun', response_txt)
-        self.assertIn('ThanksGiving', response_txt)
+        self.assertIn("shaun", response_txt)
+        self.assertIn("ThanksGiving", response_txt)
 
         self.assertNotIn("Tea", response_txt)
+
+    def test_create_route(self):
+        """Tests the route for creating a recipe"""
+        create_user()
+        login(self.app, "shaun", "password")
+        data = {
+            "title": "testrecipe",
+            "ingredients": "i1, i2, i3",
+            "ingredient_amounts": "1cup, 2cup, 3cup",
+            "instructions": "make temp recipe",
+            "servings": 69,
+        }
+        response = self.app.post("/create-recipe",
+                                 data=data,
+                                 follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        response_txt = response.get_data(as_text=True)
+        self.assertIn("testrecipe", response_txt)
+        self.assertIn("Servings: 69", response_txt)
+
+        recipe = Recipe.query.get(1)
+
+        self.assertEqual(recipe.title, "testrecipe")
+
+    def test_remove_route(self):
+        """Tests the route for removing a recipe"""
+        create_user()
+        create_recipe()
+        login(self.app, "shaun", "password")
+        self.app.get("/remove/recipe/1")
+        self.app.get("/remove/recipe/2")
+        self.assertEqual(Recipe.query.count(), 0)
+
+    def test_favotite_routes(self):
+        """Tests the route for favoriting and the route for unfavoriting"""
+        create_recipe()
+        create_user()
+        login(self.app, "shaun", "password")
+        response = self.app.get("/favorite/1", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+        response_txt = response.get_data(as_text=True)
+        self.assertIn(">Unfavorite", response_txt)
+        self.assertNotIn(">Favorite", response_txt)
+
+        response = self.app.get("/unfavorite/1", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+        response_txt = response.get_data(as_text=True)
+        self.assertIn(">Favorite", response_txt)
+        self.assertNotIn(">Unfavorite", response_txt)

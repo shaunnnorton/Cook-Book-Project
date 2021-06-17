@@ -54,7 +54,7 @@ def create_recipe():
         db.session.add(new_recipe)
         db.session.commit()
         flash(f"Created New Recipe {new_recipe.title}")
-        return redirect(url_for('main.view_recipe', recipe_id=new_recipe.id))
+        return redirect(url_for('view.view_recipe', recipe_id=new_recipe.id))
 
     return render_template('create_recipe.html', **context)
 
@@ -67,7 +67,7 @@ def add_favorite(recipe_id):
     current_user.favorite_recipes.append(recipe)
     db.session.commit()
     flash('You Have Favorited This Recipe!')
-    return redirect(url_for('main.view_recipe', recipe_id=recipe_id))
+    return redirect(url_for('view.view_recipe', recipe_id=recipe_id))
 
 
 @modify.route('/unfavorite/<recipe_id>')
@@ -80,7 +80,7 @@ def remove_favorite(recipe_id):
         current_user.favorite_recipes.remove(recipe)
         db.session.commit()
     flash('You Have Unfavorited This Recipe!')
-    return redirect(url_for('main.view_recipe', recipe_id=recipe_id))
+    return redirect(url_for('view.view_recipe', recipe_id=recipe_id))
 
 
 @modify.route("/remove/recipe/<recipe_id>")
@@ -92,5 +92,5 @@ def remove_recipe(recipe_id):
             db.session.delete(item)
         db.session.delete(recipe)
         db.session.commit()
-        return redirect(url_for("main.homepage"))
-    return redirect(url_for("main.homepage"))
+        return redirect(url_for("view.homepage"))
+    return redirect(url_for("view.homepage"))
